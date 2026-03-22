@@ -79,6 +79,20 @@ app.patch("/asset/:id/permissions", async (req, res) => {
 	res.status(r.status).json(body)
 })
 
+// fetch authenticated roblox profile for a given cookie
+app.get("/me", async (req, res) => {
+	if (!authed(req, res)) return
+	const cookie = getCookie(req)
+	if (!cookie) return res.status(400).json({ error: "no cookie" })
+	const r = await fetch("https://users.roblox.com/v1/users/authenticated", {
+		headers: { Cookie: `.ROBLOSECURITY=${cookie}` },
+	}).catch(e => { console.log("[me] error:", e.message); return null })
+	if (!r) return res.status(502).json({ error: "upstream failed" })
+	console.log("[me] status:", r.status)
+	const body = await r.json().catch(() => ({}))
+	res.status(r.status).json(body)
+})
+
 app.get("/ping", (_, res) => res.send("ok"))
 app.get("/",     (_, res) => res.send("AudioVerify proxy is running."))
 app.listen(process.env.PORT || 3000, () => console.log("proxy up"))
